@@ -5,7 +5,12 @@ INCLUDES := -Isrc/glad/include
 
 LDLIBS := -lglfw -lGL -ldl -lm
 
-SRCS := src/main.c src/glad/src/glad.c
+SRCS := \
+	src/main.c \
+	src/glad/src/glad.c \
+	src/lib/render/render.c \
+	src/lib/win/window.c
+
 OBJS := $(SRCS:.c=.o)
 
 TARGET := app

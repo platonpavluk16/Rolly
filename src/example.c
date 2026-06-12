@@ -43,11 +43,11 @@ int main(void)
 
     const char *fragmentShaderSource =
         "#version 330 core\n"
-        "in vec3 ourColor;\n"
+        "unifrom vec4 uColor;\n"
         "out vec4 FragColor;\n"
         "void main()\n"
         "{\n"
-        "    FragColor = vec4(ourColor, 1.0);\n"
+        "    FragColor = uColor;\n"
         "}\n";
 
     float vertices[] = {
@@ -137,6 +137,7 @@ int main(void)
         glClear(GL_COLOR_BUFFER_BIT);
 
         glUseProgram(shaderProgram);
+        
         glBindVertexArray(VAO);
 
         glDrawElements(
