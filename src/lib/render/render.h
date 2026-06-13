@@ -19,11 +19,15 @@ void CreateTextureFromFile(const char *path);
 
 void SetColors(float r, float g, float b, float a);
 
+void SetPosition(float x, float y);
+
 void SetTextureEnabled(int enabled);
 
 void SetAlphaCutoffEnabled(int enabled);
 
 void SetAlphaThreshold(float threshold);
+
+void SetPosition(float x, float y);
 
 void Draw(void);
 

@@ -8,10 +8,15 @@ static const char *vertexShaderSource =
 "#version 330 core\n"
 "layout (location = 0) in vec3 aPos;\n"
 "layout (location = 1) in vec2 aTexCoord;\n"
+"uniform vec2 uPosition;\n"
 "out vec2 TexCoord;\n"
 "void main()\n"
 "{\n"
-"    gl_Position = vec4(aPos, 1.0);\n"
+"    gl_Position = vec4(\n"
+"        aPos.x + uPosition.x,\n"
+"        aPos.y + uPosition.y,\n"
+"        aPos.z,\n"
+"        1.0);\n"
 "    TexCoord = aTexCoord;\n"
 "}\n";
 
@@ -42,6 +47,9 @@ static int colorLocation = -1;
 static int useTextureLocation = -1;
 static int useAlphaCutoffLocation = -1;
 static int alphaThresholdLocation = -1;
+static int positionLocation = -1;
+static float posX = 0.0f;
+static float posY = 0.0f;
 
 void ColorBG(float r, float g, float b, float a)
 {
@@ -185,6 +193,7 @@ unsigned int CreateStandartShader(void)
     useTextureLocation = glGetUniformLocation(shaderProgram, "uUseTexture");
     useAlphaCutoffLocation = glGetUniformLocation(shaderProgram, "uUseAlphaCutoff");
     alphaThresholdLocation = glGetUniformLocation(shaderProgram, "uAlphaThreshold");
+    positionLocation = glGetUniformLocation(shaderProgram, "uPosition");
 
     if (useTextureLocation != -1)
         glUniform1i(useTextureLocation, useTexture);
@@ -192,6 +201,8 @@ unsigned int CreateStandartShader(void)
         glUniform1i(useAlphaCutoffLocation, useAlphaCutoff);
     if (alphaThresholdLocation != -1)
         glUniform1f(alphaThresholdLocation, alphaThreshold);
+    if (positionLocation != -1)
+        glUniform2f(positionLocation,0.0f,0.0f);
 
     return shaderProgram;
 }
@@ -225,6 +236,23 @@ void SetAlphaThreshold(float threshold)
     glUseProgram(shaderProgram);
     if (alphaThresholdLocation != -1)
         glUniform1f(alphaThresholdLocation, alphaThreshold);
+}
+
+void SetPosition(float x, float y)
+{
+    posX = x;
+    posY = y;
+
+    glUseProgram(shaderProgram);
+
+    if (positionLocation != -1)
+    {
+        glUniform2f(
+            positionLocation,
+            posX,
+            posY
+        );
+    }
 }
 
 void Draw(void)
