@@ -4,33 +4,33 @@
 #include <glad/glad.h>
 #include <stddef.h>
 
-void ColorBG(float r, float g, float b, float a);
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-// Create a renderable object from vertex and index data.
-// Returns an object id (0-based) used by other functions.
-unsigned int CreateObject(float *vertices,
-                          size_t verticesSize,
-                          unsigned int *indices,
-                          size_t indicesSize);
+void ColorBG(float r, float g, float b, float a);
 
 unsigned int CreateStandartShader(void);
 
-void CreateTextureFromFile(const char *path);
+unsigned int CreateObject(float *vertices,
+                          size_t verticesSize,
+                          unsigned int *indices,
+                          size_t indicesSize,
+                          const char *texturePath, float r, float g, float b, float a);
+
+void SetObjectPosition(unsigned int objectId, float x, float y);
+
+void SetObjectAlphaCutoff(unsigned int objectId, float cutoff);
+void SetObjectRemoveBackground(unsigned int objectId, int enable);
+
+void DrawAll(void);
 
 void SetColors(float r, float g, float b, float a);
 
-void SetTextureEnabled(int enabled);
-
-void SetAlphaCutoffEnabled(int enabled);
-
-void SetAlphaThreshold(float threshold);
-
-// Set per-object position
-void SetObjectPosition(unsigned int objectId, float x, float y);
-
-// Draw all created objects
-void DrawAll(void);
-
 void DeleteTrash(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

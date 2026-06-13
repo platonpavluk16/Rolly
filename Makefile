@@ -9,7 +9,8 @@ SRCS := \
 	src/main.c \
 	src/glad/src/glad.c \
 	src/lib/render/render.c \
-	src/lib/win/window.c
+	src/lib/win/window.c \
+	src/lib/physics/collision.c
 
 OBJS := $(SRCS:.c=.o)
 
