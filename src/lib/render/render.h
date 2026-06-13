@@ -6,20 +6,18 @@
 
 void ColorBG(float r, float g, float b, float a);
 
-unsigned int InitEP(float *vertices,
-                    size_t verticesSize,
-                    unsigned int *indices,
-                    size_t indicesSize);
+// Create a renderable object from vertex and index data.
+// Returns an object id (0-based) used by other functions.
+unsigned int CreateObject(float *vertices,
+                          size_t verticesSize,
+                          unsigned int *indices,
+                          size_t indicesSize);
 
 unsigned int CreateStandartShader(void);
-
-void CreateCharacterTexture(void);
 
 void CreateTextureFromFile(const char *path);
 
 void SetColors(float r, float g, float b, float a);
-
-void SetPosition(float x, float y);
 
 void SetTextureEnabled(int enabled);
 
@@ -27,9 +25,11 @@ void SetAlphaCutoffEnabled(int enabled);
 
 void SetAlphaThreshold(float threshold);
 
-void SetPosition(float x, float y);
+// Set per-object position
+void SetObjectPosition(unsigned int objectId, float x, float y);
 
-void Draw(void);
+// Draw all created objects
+void DrawAll(void);
 
 void DeleteTrash(void);
 

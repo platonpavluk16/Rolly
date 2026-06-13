@@ -6,10 +6,10 @@ int main(void)
     Init();
 
     float vertices[] = {
-        -0.5f, -0.5f, 0.0f,   0.0f, 0.0f,
-         0.5f, -0.5f, 0.0f,   1.0f, 0.0f,
-         0.5f,  0.5f, 0.0f,   1.0f, 1.0f,
-        -0.5f,  0.5f, 0.0f,   0.0f, 1.0f
+        -0.12, -0.12, 0.0f,   0.0f, 0.0f,
+         0.12, -0.12, 0.0f,   1.0f, 0.0f,
+         0.12,  0.12, 0.0f,   1.0f, 1.0f,
+        -0.12,  0.12, 0.0f,   0.0f, 1.0f
     };
 
     unsigned int indices[] = {
@@ -17,7 +17,7 @@ int main(void)
         2, 3, 0
     };
 
-    Window *win = create_window(600, 600, "Title");
+    Window *win = create_window(1920, 1080, "Title");
 
     if (win == NULL)
         return -1;
@@ -27,19 +27,15 @@ int main(void)
     if (errorGLAD(win) != 0)
         return -1;
 
-    InitEP(
-        vertices,
-        sizeof(vertices),
-        indices,
-        sizeof(indices)
-    );
-
     CreateStandartShader();
     CreateTextureFromFile("src/assets/sim.png");
-    SetColors(0.0f, 0.0f, 1.0f, 1.0f);
     SetTextureEnabled(1);
     SetAlphaThreshold(0.1f);
     SetAlphaCutoffEnabled(1);
+
+    unsigned int obj1 = CreateObject(vertices, sizeof(vertices), indices, sizeof(indices));
+    unsigned int obj2 = CreateObject(vertices, sizeof(vertices), indices, sizeof(indices));
+    SetObjectPosition(obj2, 0.8f, 0.0f);
 
 
     float playerX = 0.0f;
@@ -59,16 +55,16 @@ int main(void)
         if (glfwGetKey(win, GLFW_KEY_S) == GLFW_PRESS)
             playerY -= 0.01f;
 
-        SetPosition(playerX, playerY);
+        SetObjectPosition(obj1, playerX, playerY);
 
         ColorBG(
-            1.0f,
+            0.0f,
             0.0f,
             0.0f,
             1.0f
         );
 
-        Draw();
+        DrawAll();
     }
 
     DeleteTrash();

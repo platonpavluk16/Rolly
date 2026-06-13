@@ -3,6 +3,7 @@
 #include "render.h"
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 
 static const char *vertexShaderSource =
 "#version 330 core\n"
@@ -37,7 +38,19 @@ const char *fragmentShaderSource =
 "    FragColor = color;\n"
 "}\n";
 
-static unsigned int VAO, VBO, EBO;
+typedef struct
+{
+    unsigned int VAO;
+    unsigned int VBO;
+    unsigned int EBO;
+    GLsizei indexCount;
+    float posX;
+    float posY;
+} RenderObject;
+
+static RenderObject *objects = NULL;
+static size_t objectsCount = 0;
+
 static unsigned int shaderProgram;
 static unsigned int textureID;
 static int useTexture = 0;
@@ -48,8 +61,6 @@ static int useTextureLocation = -1;
 static int useAlphaCutoffLocation = -1;
 static int alphaThresholdLocation = -1;
 static int positionLocation = -1;
-static float posX = 0.0f;
-static float posY = 0.0f;
 
 void ColorBG(float r, float g, float b, float a)
 {
@@ -57,21 +68,23 @@ void ColorBG(float r, float g, float b, float a)
     glClear(GL_COLOR_BUFFER_BIT);
 }
 
-unsigned int InitEP(float *vertices,
-                    size_t verticesSize,
-                    unsigned int *indices,
-                    size_t indicesSize)
+unsigned int CreateObject(float *vertices,
+                          size_t verticesSize,
+                          unsigned int *indices,
+                          size_t indicesSize)
 {
-    glGenVertexArrays(1, &VAO);
-    glGenBuffers(1, &VBO);
-    glGenBuffers(1, &EBO);
+    RenderObject obj;
 
-    glBindVertexArray(VAO);
+    glGenVertexArrays(1, &obj.VAO);
+    glGenBuffers(1, &obj.VBO);
+    glGenBuffers(1, &obj.EBO);
 
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBindVertexArray(obj.VAO);
+
+    glBindBuffer(GL_ARRAY_BUFFER, obj.VBO);
     glBufferData(GL_ARRAY_BUFFER, verticesSize, vertices, GL_STATIC_DRAW);
 
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, obj.EBO);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, indicesSize, indices, GL_STATIC_DRAW);
 
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
@@ -80,66 +93,28 @@ unsigned int InitEP(float *vertices,
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
 
-    return VAO;
-}
+    obj.indexCount = (GLsizei)(indicesSize / sizeof(unsigned int));
+    obj.posX = 0.0f;
+    obj.posY = 0.0f;
 
-static void FillCharacterImage(unsigned char *data, int width, int height)
-{
-    const unsigned char transparent[4] = {0, 0, 0, 0};
-    const unsigned char body[4] = {200, 120, 60, 255};
-    const unsigned char hair[4] = {80, 40, 20, 255};
-    const unsigned char eye[4] = {0, 0, 0, 255};
-
-    for (int y = 0; y < height; ++y)
+    // append to objects array
+    RenderObject *newArr = realloc(objects, (objectsCount + 1) * sizeof(RenderObject));
+    if (!newArr)
     {
-        for (int x = 0; x < width; ++x)
-        {
-            unsigned char *pixel = data + 4 * (y * width + x);
-            memcpy(pixel, transparent, 4);
-
-            int cx = x - width / 2;
-            int cy = y - 18;
-            int head = cx * cx + cy * cy;
-            int inHead = head < 180;
-            int inBody = x >= 22 && x < 42 && y >= 24 && y < 46;
-            int inArm = ((x >= 16 && x < 24) || (x >= 40 && x < 48)) && y >= 26 && y < 38;
-            int inLeg = ((x >= 24 && x < 30) || (x >= 34 && x < 40)) && y >= 46 && y < 62;
-
-            if (inHead)
-            {
-                memcpy(pixel, body, 4);
-                if ((x == 24 || x == 25) && (y == 18 || y == 19))
-                    memcpy(pixel, eye, 4);
-                if ((x == 38 || x == 39) && (y == 18 || y == 19))
-                    memcpy(pixel, eye, 4);
-                if (y < 16)
-                    memcpy(pixel, hair, 4);
-            }
-            else if (inBody || inArm || inLeg)
-            {
-                memcpy(pixel, body, 4);
-            }
-        }
+        fprintf(stderr, "Failed to allocate objects array\n");
+        // cleanup created buffers
+        glDeleteVertexArrays(1, &obj.VAO);
+        glDeleteBuffers(1, &obj.VBO);
+        glDeleteBuffers(1, &obj.EBO);
+        return (unsigned int)-1;
     }
-}
 
-void CreateCharacterTexture(void)
-{
-    const int width = 64;
-    const int height = 64;
-    static unsigned char imageData[64 * 64 * 4];
+    objects = newArr;
+    objects[objectsCount] = obj;
+    unsigned int id = (unsigned int)objectsCount;
+    objectsCount++;
 
-    FillCharacterImage(imageData, width, height);
-
-    glGenTextures(1, &textureID);
-    glBindTexture(GL_TEXTURE_2D, textureID);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, imageData);
-    glGenerateMipmap(GL_TEXTURE_2D);
-    glBindTexture(GL_TEXTURE_2D, 0);
+    return id;
 }
 
 void CreateTextureFromFile(const char *path)
@@ -202,7 +177,7 @@ unsigned int CreateStandartShader(void)
     if (alphaThresholdLocation != -1)
         glUniform1f(alphaThresholdLocation, alphaThreshold);
     if (positionLocation != -1)
-        glUniform2f(positionLocation,0.0f,0.0f);
+        glUniform2f(positionLocation, 0.0f, 0.0f);
 
     return shaderProgram;
 }
@@ -238,24 +213,15 @@ void SetAlphaThreshold(float threshold)
         glUniform1f(alphaThresholdLocation, alphaThreshold);
 }
 
-void SetPosition(float x, float y)
+void SetObjectPosition(unsigned int objectId, float x, float y)
 {
-    posX = x;
-    posY = y;
-
-    glUseProgram(shaderProgram);
-
-    if (positionLocation != -1)
-    {
-        glUniform2f(
-            positionLocation,
-            posX,
-            posY
-        );
-    }
+    if (objectId >= objectsCount)
+        return;
+    objects[objectId].posX = x;
+    objects[objectId].posY = y;
 }
 
-void Draw(void)
+void DrawAll(void)
 {
     glUseProgram(shaderProgram);
     if (useTexture)
@@ -263,15 +229,29 @@ void Draw(void)
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, textureID);
     }
-    glBindVertexArray(VAO);
-    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+
+    for (size_t i = 0; i < objectsCount; ++i)
+    {
+        RenderObject *o = &objects[i];
+        if (positionLocation != -1)
+            glUniform2f(positionLocation, o->posX, o->posY);
+
+        glBindVertexArray(o->VAO);
+        glDrawElements(GL_TRIANGLES, o->indexCount, GL_UNSIGNED_INT, 0);
+    }
 }
 
 void DeleteTrash(void)
 {
     glDeleteTextures(1, &textureID);
-    glDeleteVertexArrays(1, &VAO);
-    glDeleteBuffers(1, &VBO);
-    glDeleteBuffers(1, &EBO);
+    for (size_t i = 0; i < objectsCount; ++i)
+    {
+        glDeleteVertexArrays(1, &objects[i].VAO);
+        glDeleteBuffers(1, &objects[i].VBO);
+        glDeleteBuffers(1, &objects[i].EBO);
+    }
+    free(objects);
+    objects = NULL;
+    objectsCount = 0;
     glDeleteProgram(shaderProgram);
 }
